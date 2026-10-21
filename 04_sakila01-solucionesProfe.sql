@@ -1,0 +1,397 @@
+use sakila;
+
+select * from actor;
+
+select * from film;
+
+-- 0) Saca el nombre de los actores que han salido en "AGENT TRUMAN"
+/* Tablas que necesito:
+		- film (nombre de la peli)
+        - actor (nombre del actor)
+        - film_actor para unirlas
+*/
+SELECT first_name,last_name
+FROM film
+		JOIN film_actor USING(film_id)
+        JOIN actor USING(actor_id)
+WHERE title = 'AGENT TRUMAN';
+
+-- 1) Cinco actores con más películas
+/* Tablas que necesito:
+		- actor
+        - film_actor
+        - ¿film? No es necesaria porque ya tengo film_id en film_actor.
+	Agrupo por actor_id
+    Cuento film_id
+*/
+SELECT actor_id,first_name,last_name,film_id
+FROM actor JOIN film_actor USING(actor_id);
+
+SELECT actor_id,first_name,last_name,count(film_id) AS num_peliculas
+FROM actor JOIN film_actor USING(actor_id)
+GROUP BY actor_id
+ORDER BY count(film_id) DESC
+LIMIT 5;
+
+-- Para corregir el viernes 16/10:
+-- Cuántas películas hay por categoría
+/*
+Tablas: 
+	category (por el nombre de la categoría)
+    film_category
+    ¿film? No hace falta
+*/
+select * from category;
+
+SELECT category.name,count(film_id)
+FROM film_category
+	-- JOIN category ON film_category.category_id = category.category_id;
+    JOIN category USING(category_id)
+GROUP BY category.name;
+
+SELECT name,count(film_id)
+FROM film_category
+	-- JOIN category ON film_category.category_id = category.category_id;
+    JOIN category USING(category_id)
+GROUP BY name;
+
+SELECT name,count(*)
+FROM film_category
+	-- JOIN category ON film_category.category_id = category.category_id;
+    JOIN category USING(category_id)
+GROUP BY name;
+
+
+SELECT name,count(distinct film_id)
+FROM film_category
+	-- JOIN category ON film_category.category_id = category.category_id;
+    JOIN category USING(category_id)
+GROUP BY name;
+
+-- ¿Cuántas películas tienen más de una categoría?
+select * from film_category;
+-- vamos a sacar cuántas categorías tiene cada película
+SELECT 
+    film_id, COUNT(category_id)
+FROM
+    film_category
+GROUP BY film_id;
+-- Y ahora hay que filtrar. Filtrar es un WHERE. Pero, queremos un filtro
+-- DESPUÉS de haber agrupado y WHERE filtra antes de agrupar. Por eso,
+-- WHERE no nos sirve y SQL ofrece una palabra reservada: HAVING
+SELECT 
+    film_id, COUNT(category_id)
+FROM
+    film_category
+GROUP BY film_id
+HAVING COUNT(category_id) > 1;
+
+-- Rta: no hay ninguna película con más de una categoría.
+-- Obtén el top 3 de categorías con más películas
+SELECT category_id,name,count(film_id) AS num_peliculas
+FROM film_category JOIN category USING(category_id)
+GROUP BY category_id
+ORDER BY count(film_id) DESC
+LIMIT 3;
+
+SELECT category_id,name,count(film_id) AS num_peliculas
+FROM film_category JOIN category USING(category_id)
+GROUP BY name
+ORDER BY count(film_id) DESC
+LIMIT 3;
+
+-- DIFERENCIA ENTRE JOIN USING Y JOIN ON
+SELECT * 
+FROM category JOIN film_category USING(category_id) limit 3;
+
+SELECT * 
+FROM category JOIN film_category ON category.category_id = film_category.category_id limit 3;
+
+-- Víctor explicó las diferencias. Lo contó genial con coloritos rojos en la pizarra.
+-- ¡Menos mal que fui un alumno responsable y tomé un montón de apuntes de eso! 
+-- Además, estuvo mucho rato contetando todas las preguntas que salieron.
+
+-- Obtén el listado de categorías que tienen más de 60 películas
+/*
+	film_category
+    category
+*/
+SELECT name,fc.category_id,count(film_id)
+FROM film_category fc JOIN category c ON fc.category_id = c.category_id
+GROUP BY fc.category_id
+HAVING count(film_id) > 60;
+
+-- Obtén el listado de categorías que tienen más de 5 películas que empiezan por la letra 'A'
+SELECT category_id,name,count(film_id)
+FROM film JOIN film_category USING(film_id) 
+	JOIN category USING(category_id)
+WHERE title like 'A%'
+GROUP BY category_id
+HAVING count(film_id) > 5;
+
+SELECT category_id,name,count(film_id)
+FROM film JOIN film_category USING(film_id)
+	JOIN category USING(category_id)
+GROUP BY category_id
+HAVING film.title LIKE 'A%';
+-- Esto da error. Para más información, preguntar a David que ha escrito un libro sobre este ejemplo.alter
+
+-- 2 consultas parecidas: ¿qué pasa si quiero categorías que empiezan por A? ¿WHERE O HAVING?
+
+SELECT category_id,name,count(film_id)
+FROM film JOIN film_category USING(film_id) JOIN category USING(category_id)
+GROUP BY category_id
+HAVING name LIKE 'A%';
+
+SELECT category_id,name,count(film_id)
+FROM film JOIN film_category USING(film_id) JOIN category USING(category_id)
+WHERE name LIKE 'A%'
+GROUP BY category_id;
+-- Funcionan las 2 aunque es más eficiente la segunda. La primera agrupa datos innecesarios, bla bla bla bla
+
+
+
+
+-- Obtén un listado de nombre del actor, película en la que ha trabajado y categoría de esa película
+/*necesito: actor.first_name, actor.last_name, film.title, category.name
+Tablas: actor, film, category
+auxiliares para unir: film_actor y film_category
+
+CAMINO: actor -(actor_id)-> film_actor -(film_id)-> film -(film_id)-> film_category -(category_id)-> category
+*/
+
+SELECT first_name,last_name, title, name
+FROM actor JOIN film_actor USING(actor_id) 
+		JOIN film USING(film_id)
+        JOIN film_category USING(film_id) 
+        JOIN category USING(category_id);
+
+-- vamos a hacerla más bonita        
+SELECT CONCAT(first_name,' ',last_name) AS actor, title AS pelicula, name AS categoria
+FROM actor JOIN film_actor USING(actor_id) 
+		JOIN film USING(film_id)
+        JOIN film_category USING(film_id) 
+        JOIN category USING(category_id);
+
+-- Cuántos actores DISTINTOS han trabajado en cada categoría.
+SELECT name,count(actor_id),count(distinct actor_id)
+FROM category JOIN film_category USING(category_id)
+			JOIN film USING(film_id)
+            JOIN film_actor USING(film_id)
+GROUP BY category_id;
+-- ¿Por qué agrupo por category_id si no está en el select?
+
+-- Para corregir el miércoles 21/10:
+-- Nombre de actores que han trabajado en más de 7 categorías
+
+-- Camino: actor -> film_actor -> film -> film_category
+SELECT CONCAT(first_name,' ',last_name) AS nombre,film_id,category_id
+FROM 
+	actor JOIN film_actor USING(actor_id) 
+		JOIN film USING(film_id)
+        JOIN film_category USING(film_id)
+ORDER BY nombre;
+	
+SELECT CONCAT(first_name,' ',last_name) AS nombre,COUNT(category_id)
+FROM 
+	actor JOIN film_actor USING(actor_id) 
+		JOIN film USING(film_id)
+        JOIN film_category USING(film_id)
+GROUP BY actor_id;
+-- EN REALIDAD, ESTO ESTÁ CONTANDO PELÍCULAS. POR ESO EL DISTINCT
+
+SELECT 
+    actor_id, -- está en el group by. OK
+    CONCAT(first_name, ' ', last_name) AS nombre, -- Ni agregado ni group by. ¿OK? Porque conociendo el actor_id, el nombre se 
+    -- conoce unívocamente. (*)
+    COUNT(category_id) AS num_peliculas,-- agregado. OK
+    COUNT(DISTINCT category_id) AS num_categorias-- agregado. OK
+FROM
+    actor
+        JOIN
+    film_actor USING (actor_id)
+        JOIN
+    film USING (film_id)
+        JOIN
+    film_category USING (film_id)
+GROUP BY actor_id;
+-- (*) este campo es de una tabla cuya clave primaria está en el group by.
+-- SIN TERMINAR. SEGUIMOS MÁS ABAJO (VER ***)
+
+
+-- REPASO DEL ERROR 1055
+
+SELECT name,count(distinct film_id)
+FROM film_category
+	-- JOIN category ON film_category.category_id = category.category_id;
+    JOIN category USING(category_id)
+GROUP BY name;
+
+SELECT category_id,name,count(distinct film_id)
+FROM film_category
+	-- JOIN category ON film_category.category_id = category.category_id;
+    JOIN category USING(category_id)
+GROUP BY category_id;
+
+SELECT name,count(distinct film_id)
+FROM film_category
+	-- JOIN category ON film_category.category_id = category.category_id;
+    JOIN category USING(category_id)
+GROUP BY name;
+
+
+SELECT category_id, name,count(distinct film_id)
+FROM film_category
+	-- JOIN category ON film_category.category_id = category.category_id;
+    JOIN category USING(category_id)
+GROUP BY name;
+
+-- (***) SOLUCIÓN: FALTA EL "CON MÁS DE 7 CATEGORÍAS"
+SELECT 
+    actor_id, CONCAT(first_name, ' ', last_name) AS nombre, COUNT(DISTINCT category_id) AS num_categorias
+FROM
+    actor
+        JOIN
+    film_actor USING (actor_id)
+        JOIN
+    film USING (film_id)
+        JOIN
+    film_category USING (film_id)
+GROUP BY actor_id
+HAVING COUNT(DISTINCT category_id) > 7
+-- ORDER BY COUNT(DISTINCT category_id) DESC -- Esto es más correcto, pero es de pedantes.
+ORDER BY num_categorias DESC;
+
+-- Película que tiene más copias físicas (inventory_id)
+-- Tablas: inventory -- (film_id) --> film
+
+SELECT title, COUNT(inventory_id), COUNT(distinct inventory_id)
+FROM film JOIN inventory ON film.film_id = inventory.inventory_id
+GROUP BY film_id
+ORDER BY COUNT(inventory_id) DESC
+LIMIT 1;
+
+SELECT *
+FROM film JOIN inventory ON film.film_id = inventory.inventory_id
+LIMIT 1;
+
+SELECT title, COUNT(inventory_id), COUNT(distinct inventory_id)
+FROM film JOIN inventory ON film.film_id = inventory.inventory_id
+GROUP BY film.film_id
+ORDER BY COUNT(inventory_id) DESC
+LIMIT 1;
+
+SELECT title, COUNT(inventory_id), COUNT(distinct inventory_id)
+-- FROM film JOIN inventory ON film.film_id = inventory.inventory_id -- ERROR. ES UN EJEMPLO DE COSAS QUE PERMITE EL ON QUE NO PERMITE USING
+FROM film JOIN inventory ON film.film_id = inventory.film_id
+GROUP BY film.film_id
+ORDER BY COUNT(inventory_id) DESC
+LIMIT 1;
+
+SELECT title, COUNT(inventory_id), COUNT(distinct inventory_id)
+FROM film JOIN inventory USING(film_id)
+GROUP BY film_id
+ORDER BY COUNT(inventory_id) DESC
+LIMIT 1;
+
+SELECT title, inventory_id
+FROM film JOIN inventory USING(film_id);
+
+SELECT title, COUNT(inventory_id), COUNT(distinct inventory_id), COUNT(title), COUNT(*)
+FROM film JOIN inventory USING(film_id)
+GROUP BY film_id
+ORDER BY COUNT(inventory_id) DESC
+LIMIT 1;
+
+-- EJEMPLO PARA DAVID: UN JOIN ABSURDO
+SELECT *
+FROM actor JOIN customer ON actor.actor_id = customer.customer_id;
+
+-- ejemplo útil
+SELECT film_id,title,film.language_id,film.original_language_id,language.language_id,name
+FROM film JOIN language ON film.language_id = language.language_id;
+
+SELECT film_id,title,film.language_id,film.original_language_id,language.language_id,name
+FROM film LEFT JOIN language ON film.original_language_id = language.language_id;
+
+-- Actores que empiezan por 'J' y han trabajado en categorías que empiezan por 'A'.
+-- TABLAS: actor -> film_actor -> film -> film_category -> category
+
+SELECT distinct CONCAT(first_name,' ',last_name) AS nombre, category.name
+FROM actor JOIN film_actor USING(actor_id)
+	JOIN film USING(film_id)
+    JOIN film_category USING(film_id)
+    JOIN category USING(category_id)
+WHERE first_name LIKE 'J%' AND name LIKE 'A%'
+ORDER BY nombre;
+
+-- PARA CORREGIR EL JUEVES 22/10
+-- 2) País con más clientes
+-- tablas: country -> city -> address -> customer
+select country, count(customer_id) as clientes_por_pais
+from country join city using(country_id)
+join address using (city_id)
+join customer using (address_id)
+group by country_id
+order by clientes_por_pais desc
+limit 1;
+
+
+-- esta soluciona en caso de empate mostrando los que estan empatados y son los que mas tienen a su vez
+SELECT country, COUNT(customer_id) AS clientes_por_pais
+FROM country
+JOIN city USING (country_id)
+JOIN address USING (city_id)
+JOIN customer USING (address_id)
+GROUP BY country_id
+HAVING COUNT(customer_id) = (
+    SELECT MAX(clientes_por_pais)
+    FROM (
+        SELECT COUNT(customer_id) AS clientes_por_pais
+        FROM country
+        JOIN city USING (country_id)
+        JOIN address USING (city_id)
+        JOIN customer USING (address_id)
+        GROUP BY country_id
+    ) AS recuentos
+);
+
+
+
+-- 3) Tres películas con mayores ingresos por alquiler
+-- tablas: film -> inventory -> rental -> payment
+select title, sum(amount) as ingresos_por_alquiler
+from film join inventory using (film_id)
+join rental using (inventory_id)
+join payment using (rental_id)
+group by title
+order by sum(amount) desc
+limit 3;
+
+-- 4) Cliente que más ha gastado
+-- tablas: customer -> rental -> payment 
+select concat(first_name, ' ',last_name) as nombre, sum(amount) as gastado
+from customer 
+join rental using (customer_id)
+join payment using (rental_id)
+group by customer.customer_id, nombre  -- agrupo por el customer_id ya que si solo agrupo por nombre si dos clientes tienen el msmo nombre los juntaria sus gastos 
+order by gastado desc 
+limit 1;
+
+
+-- PARA EL VIERNES 23/10
+-- 5) Ingreso promedio por alquiler en cada tienda
+-- tablas: paymen -> rental -> customer -> store
+select *
+from 
+group by
+
+
+-- 6) Ventas totales por categoría ordenadas
+-- 7) Actores con al menos diez películas de categorías distintas
+
+-- ya VEREMOS:
+-- 8) Tiendas con más stock disponible
+-- 9) Películas que nunca han sido alquiladas
+-- 10) Diez películas con mayor diferencia entre coste de reposición y tarifa de alquiler
+-- 11) Películas con más de tres actores y duración menor a 90 minutos
