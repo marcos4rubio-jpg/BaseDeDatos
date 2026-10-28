@@ -1,0 +1,3 @@
+git add .
+git commit -m "Actualizo ejercicios"
+git push

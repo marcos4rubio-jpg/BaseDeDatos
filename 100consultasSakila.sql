@@ -1,11 +1,45 @@
 -- ==============================================
--- SECCIÓN A) 30 CONSULTAS CON JOIN DE 2 TABLAS hola 
+-- SECCIÓN A) 30 CONSULTAS CON JOIN DE 2 TABLAS holaaa
 -- ==============================================
 -- 1:  Para cada actor, muestra el número total de películas en las que aparece; es decir, cuenta cuántas filas de film_actor corresponden a cada actor.
+select actor_id, concat(first_name, ' ', last_name) as Nombre, count(film_id)
+ from actor
+ join film_actor using (actor_id)
+ group by actor_id;
+
 -- 2:  Lista solo los actores que participan en 20 o más películas (umbral alto) con su conteo.
+select actor_id, concat(first_name, ' ', last_name) as Nombre, count(film_id)
+from actor 
+join film_actor using (actor_id)
+group by actor_id
+having count(film_id) >= 20;
+
 -- 3:  Para cada idioma, indica cuántas películas están catalogadas en ese idioma.
+select language_id, name, count(film_id)
+from language
+join film using (language_id)
+group by language_id;
+
 -- 4:  Muestra el promedio de duración (length) de las películas por idioma y filtra aquellos idiomas con duración media estrictamente mayor a 110 minutos.
+select language_id, name, avg(length)
+from language
+join film using (language_id)
+group by language_id
+having avg(length) > 110;
+
+select name from language;
+
+SELECT title, language_id, original_language_id
+FROM film;
+
 -- 5:  Para cada película, muestra cuántas copias hay en el inventario.
+select film_id, title, count(rating)
+from film
+join inventory using(film_id)
+group by film_id ;
+
+
+
 -- 6:  Lista solo las películas que tienen al menos 5 copias en inventario.
 -- 7:  Para cada artículo de inventario, cuenta cuántos alquileres se han realizado.
 -- 8:  Para cada cliente, muestra cuántos alquileres ha realizado en total.
