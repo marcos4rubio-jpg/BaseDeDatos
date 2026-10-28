@@ -1,6 +1,7 @@
 -- ==============================================
 -- SECCIÓN A) 30 CONSULTAS CON JOIN DE 2 TABLAS holaaa
 -- ==============================================
+-- 27/10/2026
 -- 1:  Para cada actor, muestra el número total de películas en las que aparece; es decir, cuenta cuántas filas de film_actor corresponden a cada actor.
 select actor_id, concat(first_name, ' ', last_name) as Nombre, count(film_id)
  from actor
@@ -39,25 +40,129 @@ join inventory using(film_id)
 group by film_id ;
 
 
-
+-- 28/10/2026
 -- 6:  Lista solo las películas que tienen al menos 5 copias en inventario.
+select film_id, title, count(rating)
+from film
+join inventory using(film_id)
+group by film_id
+having count(rating) >= 5;
+
 -- 7:  Para cada artículo de inventario, cuenta cuántos alquileres se han realizado.
+select inventory_id, count(rental_id)
+from inventory
+join rental using(inventory_id)
+group by inventory_id;
+
+select inventory_id
+from inventory
+join rental using(inventory_id)
+group by inventory_id;
+
+-- solo salen solo hasta el 1001
+
 -- 8:  Para cada cliente, muestra cuántos alquileres ha realizado en total.
+select customer_id, concat(first_name, ' ', last_name) as Nombre, count(rental_id) as total_alquileres
+from customer
+join rental using(customer_id)
+group by customer_id  ;
+
 -- 9:  Lista los clientes con 30 o más alquileres acumulados.
+select customer_id, concat(first_name, ' ', last_name) as Nombre, count(rental_id)
+from customer
+join rental using(customer_id)
+group by customer_id
+having  count(rental_id) >= 30 ;
+
 -- 10:  Para cada cliente, muestra el total de pagos (suma en euros/dólares) que ha realizado.
+select customer_id, concat(first_name, ' ', last_name) as Nombre, count(amount) as total_pagos, sum(amount) as total_pagado
+from customer
+join payment using(customer_id)
+group by customer_id ;
+
 -- 11:  Muestra los clientes cuyo importe total pagado es al menos 200.
+select customer_id, concat(first_name, ' ', last_name) as Nombre, count(amount) as total_pagos, sum(amount) as total_pagado
+from customer
+join payment using(customer_id)
+group by customer_id
+having sum(amount) >= 200;
+
 -- 12:  Para cada empleado (staff), muestra el número de pagos que ha procesado.
+select staff_id, concat(first_name, ' ', last_name) as Nombre_staff, count(amount) as Pagos_procesados
+from staff 
+join payment using(staff_id)
+group by staff_id ;
+
 -- 13:  Para cada empleado, muestra el importe total procesado.
+select staff_id, concat(first_name, ' ', last_name) as Nombre_staff, sum(amount)
+from staff
+join payment using(staff_id)
+group by staff_id ;
+
 -- 14:  Para cada tienda, cuenta cuántos artículos de inventario tiene.
+select store_id, count(inventory_id) as asticulos_inventario
+from store
+join inventory using(store_id)
+group by store_id ;
+
 -- 15:  Para cada tienda, cuenta cuántos clientes tiene asignados.
+select store_id, count(customer_id) as clientes_asignados
+from store
+join customer using(store_id)
+group by store_id ;
+
 -- 16:  Para cada tienda, cuenta cuántos empleados (staff) tiene asignados.
+select store_id, count(staff_id) as empleados_asignados
+from store
+join staff using(store_id)
+group by store_id ;
+
 -- 17:  Para cada dirección (address), cuenta cuántas tiendas hay ubicadas ahí (debería ser 0/1 en datos estándar).
+select address_id, address,  count(store_id)
+from address
+join store using(address_id)
+group by address_id ;
+
 -- 18:  Para cada dirección, cuenta cuántos empleados residen en esa dirección.
+select address_id, address, count(staff_id) 
+from address
+join staff using(address_id)
+group by address_id ;
+
 -- 19:  Para cada dirección, cuenta cuántos clientes residen ahí.
+select address_id, address, count(customer_id) 
+from address
+join customer using(address_id)
+group by address_id ;
+
 -- 20:  Para cada ciudad, cuenta cuántas direcciones hay registradas.
+select city_id, city, count(address_id) as direcciones_registradas
+from city
+join address using(city_id)
+group by  city_id;
+-- having count(address_id) > 1;
+
 -- 21:  Para cada país, cuenta cuántas ciudades existen.
+select country_id, country, count(city_id) as ciudades_pais
+from country
+join city using(country_id)
+group by country_id ;
+
 -- 22:  Para cada idioma, calcula la duración media de películas y muestra solo los idiomas con media entre 90 y 120 inclusive.
+select language_id, name, avg(length) as media_duracion
+from language
+join film using(language_id)
+group by language_id
+having avg(length) >= 90 && avg(length) <= 120;
+
+select name from language; -- estan creados todes estos idiomas pero solo se ha utilizado el ingles
+
 -- 23:  Para cada película, cuenta el número de alquileres que se han hecho de cualquiera de sus copias (usando inventario).
+select film_id, title, count()
+from film
+join inventory using(film_id)
+group by film_id ;
+
 -- 24:  Para cada cliente, cuenta cuántos pagos ha realizado en 2005 (usando el año de payment_date).
 -- 25:  Para cada película, muestra el promedio de tarifa de alquiler (rental_rate) de las copias existentes (es un promedio redundante pero válido).
 -- 26:  Para cada actor, muestra la duración media (length) de sus películas.
