@@ -158,12 +158,28 @@ having avg(length) >= 90 && avg(length) <= 120;
 select name from language; -- estan creados todes estos idiomas pero solo se ha utilizado el ingles
 
 -- 23:  Para cada película, cuenta el número de alquileres que se han hecho de cualquiera de sus copias (usando inventario).
-select film_id, title, count()
+select film_id, title, count(rental_id)
 from film
 join inventory using(film_id)
-group by film_id ;
+join rental using(inventory_id)
+group by film_id;
 
 -- 24:  Para cada cliente, cuenta cuántos pagos ha realizado en 2005 (usando el año de payment_date).
+select customer_id, concat(first_name, ' ', last_name) as Nombre, count(payment_id) as pagos
+from customer
+join payment using(customer_id)
+where payment_date like '%2005%'
+group by customer_id ;
+
+select customer_id, concat(first_name, ' ', last_name) as Nombre, count(payment_id) as pagos
+from customer
+join payment using(customer_id)
+group by customer_id
+having payment_date like'2005%' ;
+
+select payment_id, payment_date from payment;
+
+
 -- 25:  Para cada película, muestra el promedio de tarifa de alquiler (rental_rate) de las copias existentes (es un promedio redundante pero válido).
 -- 26:  Para cada actor, muestra la duración media (length) de sus películas.
 -- 27:  Para cada ciudad, cuenta cuántos clientes hay (usando la relación cliente->address->city requiere 3 tablas; aquí contamos direcciones por ciudad).
