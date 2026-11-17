@@ -384,15 +384,89 @@ join film_actor using(film_id)
 group by language_id ;
 
 -- 51:  Para cada tienda, cuenta cuántos clientes activos (active=1) tiene.
+select store_id, count(customer_id)
+from store 
+join customer using(store_id)
+where active = 1
+group by store_id ;
+
 -- 52:  Para cada cliente, cuenta en cuántas categorías distintas ha alquilado (aprox. vía film_category; requiere 4 tablas, aquí contamos películas 2006 por inventario).
+select customer_id, concat(first_name, ' ', last_name) as nombre, count(distinct (category_id)) as alquileres2006
+from customer 
+join rental using(customer_id)
+join inventory using(inventory_id)
+join film_category using(film_id)
+WHERE rental_date like '2006%'
+group by customer_id ;
+
 -- 53:  Para cada empleado, cuenta cuántos clientes diferentes le han pagado.
+select staff_id, concat(s.first_name, ' ', s.last_name) as Nombre, count(distinct(customer_id))
+from staff s
+join payment p using(staff_id)
+join customer c using(customer_id)
+group by s.staff_id  ;
+
 -- 54:  Para cada ciudad, cuenta cuántas películas del año 2006 han sido alquiladas por residentes en esa ciudad.
+select city_id, city, count(rental_id)
+from city
+join address using(city_id)
+join customer using(address_id)
+join rental using(customer_id)
+where rental_date like '2006%'
+group by city_id ;
+
+
 -- 55:  Para cada categoría, calcula el promedio de replacement_cost de sus películas.
+select category_id, name, avg(replacement_cost) as 	avg_replacement_cos
+from category
+join film_category using(category_id)
+join film using(film_id)
+group by category_id  ;
+
 -- 56:  Para cada tienda, suma los importes cobrados en 2006 (vía empleados de esa tienda).
+select store_id, sum(amount)
+from store
+join staff using(store_id)
+join payment using(staff_id)
+where payment_date like '2006%'
+group by store_id ;
+
 -- 57:  Para cada actor, cuenta cuántas películas tienen título de más de 12 caracteres.
+select actor_id, concat(first_name, ' ', last_name) as nombre, count(film_id) as peli_title_long_12
+from actor 
+join film_actor using(actor_id)
+join film using(film_id)
+where char_length(title) > 12 
+group by actor_id;
+
 -- 58:  Para cada ciudad, calcula la suma de pagos de 2005 y filtra las ciudades con total >= 300.
+select city_id, city, sum(amount) as pagos2005
+from city
+join address using(city_id)
+join customer using(address_id)
+join payment using(customer_id)
+where payment_date like '2005%'
+group by city_id
+having pagos2005 >= 300;
+
 -- 59:  Para cada categoría, cuenta cuántas películas tienen rating 'PG' o 'PG-13'.
+select category_id, name, count(film_id) as pelis_pg_pg13
+from category
+join film_category using(category_id)
+join film using(film_id)
+where rating like '%PG%' or  '%PG-13%' 
+group by category_id; 
+
 -- 60:  Para cada cliente, calcula el total pagado en pagos procesados por el empleado 2.
+select customer_id, concat(c.first_name, ' ', c.last_name) as nombreCliente, sum(amount) as pagos_procesado_staff2
+from customer c
+join payment using(customer_id)
+join staff using(staff_id)
+where staff_id = 2
+group by customer_id;
+
+
+
 -- ==============================================
 -- SECCIÓN C) 20 CONSULTAS CON JOIN DE 4 TABLAS
 -- ==============================================
