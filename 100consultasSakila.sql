@@ -559,15 +559,131 @@ group by country_id;
 
 
 -- 71:  Para cada tienda, cuenta cuántas categorías distintas existen en su inventario.
+select store_id, count(distinct (category_id))
+from store 
+join inventory using(store_id)
+join film using(film_id)
+join film_category using(film_id)
+group by store_id;
+
+
+
 -- 72:  Para cada tienda, suma la recaudación por categoría (resultado agregado por tienda y categoría).
+select store_id, category_id, name, sum(amount)
+from category
+join film_category using(category_id)
+join film using(film_id)
+join inventory using(film_id)
+join store using(store_id)
+join customer using(store_id)
+join payment using(customer_id)
+group by store_id, category_id;
+-- hasta aqui me tarda unos 27 segundos en ejecutarse pero me funciona bien,
+-- al añadir el sum(amount) en el select me sale el error 2013 de lost conecction to MySQL server during query y ya no funciona 
+-- ese error me daba por que hay un limite de 30 segundos si tarda mas no se ejecuta, lo he apliado el limite y funciona 
+-- pero ha tardado 289 segundos y me da el resultado muy elevado ya que con el join customer using(store_id) relaciono inventario con clientes
+-- mediante store_id y el amount suma muchos pagos repetidos.
+
+-- la ia me da esta solucion con otros caminos de joins y tardando menos de 1 segundo en ejecutarse dando la solucion buena
+-- mas o menos lo entiendo pero me parece muy dificil ya que con mas de 6 tablas hay que entender muchas relaciones, 
+-- saber cual es la indicada para el ejercicio pero bueno ya sera mas facil practicando mas.
+SELECT
+    staff.store_id,
+    category_id,
+    name AS category_name,
+    SUM(amount) AS revenue
+FROM category
+JOIN film_category USING(category_id)
+JOIN film USING(film_id)
+JOIN inventory USING(film_id)
+JOIN rental USING(inventory_id)
+JOIN payment USING(rental_id)
+JOIN staff ON payment.staff_id = staff.staff_id
+GROUP BY staff.store_id, category_id;
+
+
 -- 73:  Para cada actor, cuenta en cuántas tiendas distintas se han alquilado sus películas.
+select actor_id, concat(first_name, ' ', last_name) as nombre, count(distinct store_id) as tiendas_distintas_se_ha_alquilado
+from actor
+join film_actor using(actor_id)
+join inventory using(film_id)
+join rental using(inventory_id)
+group by actor_id;
+
 -- 74:  Para cada categoría, cuenta cuántos clientes distintos han alquilado películas de esa categoría.
+select category_id, name, count(distinct customer_id) as clientes_distintos
+from category
+join film_category using(category_id)
+join film using(film_id)
+join inventory using(film_id)
+join rental using(inventory_id)
+group by category_id;
+
 -- 75:  Para cada idioma, cuenta cuántos actores distintos participan en películas alquiladas en ese idioma.
+select language_id, name, count(distinct actor_id) as actores_distintos
+from language
+join film using(language_id)
+join film_actor using(film_id)
+join inventory using(film_id)
+join rental using(inventory_id)
+group by language_id;
+
 -- 76:  Para cada país, cuenta cuántas tiendas hay (país->ciudad->address->store).
+select country_id, country, count(store_id) as tiendas
+from country
+join city using(country_id)
+join address using(city_id)
+join store using(address_id)
+group by country_id;
+
 -- 77:  Para cada cliente, cuenta los alquileres en los que la devolución (return_date) fue el mismo día del alquiler.
+select customer_id, concat(first_name, ' ', last_name) as nombre, count(rental_id) as alquileres_mismo_dia
+from customer
+join rental using(customer_id)
+where date(rental_date) = date(return_date)
+group by customer_id;
+
 -- 78:  Para cada tienda, cuenta cuántos clientes distintos realizaron pagos en 2005.
+select store_id, count(distinct customer_id) as clientesDistintos
+from store
+join customer using(store_id)
+join payment using(customer_id)
+where payment_date >= '2005-01-01'
+and payment_date < '2006-01-01'
+group by store_id;
+-- esta era mi solucion pero no funciona por que estoy relacionando los pagos con la tienda a través del cliente (customer.store_id)
+-- que no indica donde se ha procesado el pago 
+
+-- Para obtener la tienda correcta, tengo que relacionar los pagos con los empleados (payment.staff_id)
+-- y estos con su tienda (staff.store_id). Así cuento los clientes según la tienda que ha procesado sus pagos:
+-- 78
+select staff.store_id, count(distinct customer_id) as clientesdistintos
+from payment
+join staff using(staff_id)
+where payment_date >= '2005-01-01'
+and payment_date < '2006-01-01'
+group by staff.store_id;
+
 -- 79:  Para cada categoría, cuenta cuántas películas con título de longitud > 15 han sido alquiladas.
+select category_id, name, count(film_id) as peliculas
+from category
+join film_category using(category_id)
+join film using(film_id)
+join inventory using(film_id)
+join rental using(inventory_id)
+where char_length(title) > 15
+group by category_id;
+
 -- 80:  Para cada país, suma los pagos procesados por los empleados de las tiendas ubicadas en ese país.
+select country_id, country, sum(amount) as total_pagos
+from country
+join city using(country_id)
+join address using(city_id)
+join store using(address_id)
+join staff using(store_id)
+join payment using(staff_id)
+group by country_id;
+
 -- ==============================================
 -- SECCIÓN D) 20 CONSULTAS EXTRA (DIFICULTAD +), <=4 JOINS
 -- ==============================================
