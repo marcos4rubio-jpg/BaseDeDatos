@@ -775,13 +775,99 @@ and rental_date < '2006-04-01'
 group by store_id;
 
 -- 91:  Para cada país, cuenta cuántas categorías diferentes han sido alquiladas por clientes residentes en ese país.
+select country_id, country, count(distinct category_id) as categorias_distintas_alquiladas
+from country
+join city using(country_id)
+join address using(city_id)
+join customer using(address_id)
+join rental using(customer_id)
+join inventory using(inventory_id)
+join film using(film_id)
+join film_category using(film_id)
+group by country_id;
+
 -- 92:  Para cada cliente, muestra el importe medio de sus pagos redondeado a 2 decimales, solo si ha hecho al menos 10 pagos.
+select customer_id, concat(first_name, ' ', last_name) as nombre,  round(avg(amount), 2) as importe_medio_pagos
+from customer
+join payment using(customer_id)
+group by customer_id
+having count(payment_id) >= 10;
+
+
 -- 93:  Para cada categoría, muestra el número de películas con replacement_cost > 20 que hayan sido alquiladas al menos una vez.
+select category_id, name, count(distinct film_id) as numero_peliculas
+from category
+join film_category using(category_id)
+join film using(film_id)
+join inventory using(film_id)
+join rental using(inventory_id)
+where replacement_cost > 20
+group by category_id;
+
 -- 94:  Para cada tienda, suma los importes pagados en fines de semana.
+select store.store_id, sum(amount) as total_pagos_fin_semana
+from store
+join staff using(store_id)
+join payment using(staff_id)
+where dayofweek(payment_date) in (1, 7)
+group by store.store_id;
+
 -- 95:  Para cada actor, cuenta cuántas películas suyas fueron alquiladas por al menos 5 clientes distintos (se cuenta alquileres y luego se filtra por HAVING).
+select actor_id, concat(first_name, ' ', last_name) as nombre, count(distinct customer_id) as peliculas
+from actor
+join film_actor using(actor_id)
+join inventory using(film_id)
+join rental using(inventory_id)
+group by actor_id
+having count(distinct customer_id) >= 5;
+
 -- 96:  Para cada idioma, muestra el número de películas cuyo título empieza por la letra 'A' y que han sido alquiladas.
+select language_id, name, count(distinct film_id) as numero_peliculas
+from language
+join film using(language_id)
+join inventory using(film_id)
+join rental using(inventory_id)
+where title like 'a%'
+group by language_id;
+
 -- 97:  Para cada país, suma el importe total de pagos realizados por clientes residentes y filtra países con total >= 1000.
+select country_id, country, sum(amount) as total_pagos
+from country
+join city using(country_id)
+join address using(city_id)
+join customer using(address_id)
+join payment using(customer_id)
+group by country_id
+having sum(amount) >= 1000;
+
 -- 98:  Para cada cliente, cuenta cuántos días han pasado entre su primer y su último alquiler en 2005 (diferencia de fechas), mostrando solo clientes con >= 5 alquileres en 2005.
 --     (Se evita subconsulta calculando sobre el conjunto agrupado por cliente y usando MIN/MAX de rental_date en 2005).
+select customer_id, concat(first_name, ' ', last_name) as nombre, datediff(max(rental_date), min(rental_date)) as dias_transcurridos
+from customer
+join rental using(customer_id)
+where rental_date >= '2005-01-01'
+and rental_date < '2006-01-01'
+group by customer_id
+having count(customer_id) >= 5
+order by customer_id asc;
+
 -- 99:  Para cada tienda, muestra la media de importes cobrados por transacción en el año 2006, con dos decimales.
+select store.store_id, round(avg(amount), 2) as importe_medio
+from store
+join staff using(store_id)
+join payment using(staff_id)
+where payment_date >= '2006-01-01'
+and payment_date < '2007-01-01'
+group by store.store_id;
+
 -- 100:  Para cada categoría, calcula la media de duración (length) de películas alquiladas en 2006 y ordénalas descendentemente por dicha media
+select category_id, name, avg(length) as duracion_media
+from category
+join film_category using(category_id)
+join film using(film_id)
+join inventory using(film_id)
+join rental using(inventory_id)
+where rental_date >= '2006-01-01'
+and rental_date < '2007-01-01'
+group by category_id	
+order by duracion_media desc;
